@@ -83,7 +83,7 @@ swipeRefreshLayout.setTargetScrollWithLayout(true);
 - etc.
 ## Demo
 
-![gif](https://github.com/nuptboyzhb/TreeRecyclerView/blob/master/demo/demo.gif)
+![gif](https://github.com/nuptboyzhb/SuperSwipeRefreshLayout/blob/master/demo.gif)
 
 
 ## About
