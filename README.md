@@ -6,7 +6,7 @@ A Custom SwipeRefreshLayout.
 本来SwipeRefreshLayout已经能够满足大部分的需求了。无奈，产品经理执意要做成下拉过程中，被嵌套的View也要跟随手指的滑动而滑动，并且下拉刷新头可以自定义。
 
 ##Feature
-- 非侵入式，对原来的ListView、RecyclerView没有任何影响
+- 非侵入式，对原来的ListView、RecyclerView没有任何影响,用法和SwipeRefreshLayout类似。
 - 可自定义头部View的样式，调用setHeaderView方法即可
 - 支持RecyclerView，ListView，ScrollView，GridView等等。
 - 被包含的View(RecyclerView,ListView etc.)可跟随手指的滑动而滑动<br>
@@ -14,6 +14,7 @@ A Custom SwipeRefreshLayout.
 - 回调方法更多<br>
   比如：onRefresh() onPullDistance(int distance)和onPullEnable(boolean enable)<br>
   开发人员可以根据下拉过程中distance的值做一系列动画。
+<br>
 ## How to use
 
 ### step 1
@@ -57,7 +58,7 @@ swipeRefreshLayout = (SuperSwipeRefreshLayout) findViewById(R.id.swipe_refresh);
 
 ```
 ### step 3<br>
-- create your header view and set
+- create your header view
 
 ```java
 swipeRefreshLayout.setHeaderView(createHeaderView());// add headerView
