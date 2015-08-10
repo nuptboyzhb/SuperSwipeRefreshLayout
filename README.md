@@ -15,6 +15,7 @@ A Custom SwipeRefreshLayout.
   比如：onRefresh() onPullDistance(int distance)和onPullEnable(boolean enable)<br>
   开发人员可以根据下拉过程中distance的值做一系列动画。
 <br>
+
 ## How to use
 
 ### step 1
