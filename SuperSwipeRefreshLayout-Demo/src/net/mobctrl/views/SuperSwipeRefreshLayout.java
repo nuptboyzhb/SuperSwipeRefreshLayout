@@ -516,6 +516,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	 * @return
 	 */
 	public boolean isChildScrollToBottom() {
+		if (isChildScrollToTop()) {
+			return false;
+		}
 		if (mTarget instanceof RecyclerView) {
 			RecyclerView recyclerView = (RecyclerView) mTarget;
 			LayoutManager layoutManager = recyclerView.getLayoutManager();
