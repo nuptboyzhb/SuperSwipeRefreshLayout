@@ -4,7 +4,8 @@ A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷�
 
 ##Why？
 - 1.本来SwipeRefreshLayout已经能够满足大部分的需求了。无奈，产品经理执意要做成下拉过程中，被嵌套的View也要跟随手指的滑动而滑动，并且下拉刷新头可以自定义。<br>
-- 2.应大家要求，添加下拉加载更多
+- 2.应大家要求，添加下拉加载更多<br>
+
 ##Feature
 - 支持下拉刷新和上拉加载更多
 - 非侵入式，对原来的ListView、RecyclerView没有任何影响,用法和SwipeRefreshLayout类似。
@@ -18,7 +19,7 @@ A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷�
   开发人员可以根据下拉过程中distance的值做一系列动画。
 <br>
 
-##<1>Pull To Refresh(How to Use)
+##Pull To Refresh(How to Use)
 
 ### Step 1: In XML
 
@@ -79,7 +80,7 @@ private View createHeaderView(){
 swipeRefreshLayout.setTargetScrollWithLayout(true);
 ```
 
-##<2> Push to Load More
+##Push to Load More
 当拉倒底部时，上拉加载更多
 
 ### setListener
