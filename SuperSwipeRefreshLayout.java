@@ -36,9 +36,17 @@ import android.widget.ScrollView;
  * @Author Zheng Haibo
  * @PersonalWebsite http://www.mobctrl.net
  * @Description 自定义CustomeSwipeRefreshLayout<br>
- *              1.非侵入式下拉刷<br>
- *              2.支持RecyclerView<br>
- *              3.实时回调下拉的距离<br>
+ *              支持下拉刷新和上拉加载更多<br>
+ *              非侵入式，对原来的ListView、RecyclerView没有任何影响,用法和SwipeRefreshLayout类似。<br>
+ *              可自定义头部View的样式，调用setHeaderView方法即可 <br>
+ *              可自定义页尾View的样式，调用setFooterView方法即可 <br>
+ *              支持RecyclerView，ListView，ScrollView，GridView等等。<br>
+ *              被包含的View(RecyclerView,ListView etc.)可跟随手指的滑动而滑动<br>
+ *              默认是跟随手指的滑动而滑动，也可以设置为不跟随：setTargetScrollWithLayout(false) 回调方法更多<br>
+ *              比如：onRefresh() onPullDistance(int distance)和onPullEnable(boolean
+ *              enable)<br>
+ *              开发人员可以根据下拉过程中distance的值做一系列动画。 <br>
+ *
  */
 @SuppressLint("ClickableViewAccessibility")
 public class SuperSwipeRefreshLayout extends ViewGroup {
@@ -236,15 +244,6 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	@Override
 	protected int getChildDrawingOrder(int childCount, int i) {
 		// 将新添加的View,放到最后绘制
-		// if (mHeaderViewIndex < 0) {
-		// return i;
-		// } else if (i == childCount - 1) {
-		// return mHeaderViewIndex;
-		// } else if (i >= mHeaderViewIndex) {
-		// return i + 1;
-		// } else {
-		// return i;
-		// }
 		if (mHeaderViewIndex < 0 && mFooterViewIndex < 0) {
 			return i;
 		}
@@ -285,6 +284,11 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		addView(mFooterViewContainer);
 	}
 
+	/**
+	 * 设置
+	 * 
+	 * @param listener
+	 */
 	public void setOnPullRefreshListener(OnPullRefreshListener listener) {
 		mListener = listener;
 	}
@@ -545,10 +549,6 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			if (lastPos > 0 && count > 0 && lastPos == count - 1) {
 				return true;
 			}
-			// if (absListView.getChildAt(count - 1).getBottom() > absListView
-			// .getBottom()) {
-			// return true;
-			// }
 			return false;
 		} else if (mTarget instanceof ScrollView) {
 			ScrollView scrollView = (ScrollView) mTarget;
@@ -579,7 +579,6 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
 			mReturningToStart = false;
 		}
-
 		if (!isEnabled() || mReturningToStart || mRefreshing || mLoadMore
 				|| (!isChildScrollToTop() && !isChildScrollToBottom())) {
 			// 如果子View可以滑动，不拦截事件，交给子View处理-下拉刷新
@@ -587,48 +586,6 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			return false;
 		}
 
-		if (isChildScrollToBottom()) {// 上拉加载更多
-			switch (action) {
-			case MotionEvent.ACTION_DOWN:
-				mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
-				mIsBeingDragged = false;
-				final float initialMotionY = getMotionEventY(ev,
-						mActivePointerId);
-				if (initialMotionY == -1) {
-					return false;
-				}
-				mInitialMotionY = initialMotionY;// 记录按下的位置
-				break;
-			case MotionEvent.ACTION_MOVE:
-				if (mActivePointerId == INVALID_POINTER) {
-					Log.e(LOG_TAG,
-							"Got ACTION_MOVE event but don't have an active pointer id.");
-					return false;
-				}
-
-				final float y = getMotionEventY(ev, mActivePointerId);
-				if (y == -1) {
-					return false;
-				}
-				final float yDiff = mInitialMotionY - y;// 计算上拉距离
-				if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
-					mIsBeingDragged = true;// 正在上拉
-				}
-				break;
-			case MotionEventCompat.ACTION_POINTER_UP:
-				onSecondaryPointerUp(ev);
-				break;
-
-			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL:
-				mIsBeingDragged = false;
-				mActivePointerId = INVALID_POINTER;
-				break;
-			default:
-				break;
-			}
-			return mIsBeingDragged;
-		}
 		// 下拉刷新判断
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
@@ -653,9 +610,17 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			if (y == -1) {
 				return false;
 			}
-			final float yDiff = y - mInitialMotionY;// 计算下拉距离
-			if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
-				mIsBeingDragged = true;// 正在下拉
+			float yDiff = 0;
+			if (isChildScrollToBottom()) {
+				yDiff = mInitialMotionY - y;// 计算上拉距离
+				if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
+					mIsBeingDragged = true;// 正在上拉
+				}
+			} else {
+				yDiff = y - mInitialMotionY;// 计算下拉距离
+				if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
+					mIsBeingDragged = true;// 正在下拉
+				}
 			}
 			break;
 
@@ -694,92 +659,20 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		if (mReturningToStart && action == MotionEvent.ACTION_DOWN) {
 			mReturningToStart = false;
 		}
-
 		if (!isEnabled() || mReturningToStart
 				|| (!isChildScrollToTop() && !isChildScrollToBottom())) {
 			// 如果子View可以滑动，不拦截事件，交给子View处理
 			return false;
 		}
 
-		if (isChildScrollToBottom()) {
-			switch (action) {
-			case MotionEvent.ACTION_DOWN:
-				mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
-				mIsBeingDragged = false;
-				Log.d(LOG_TAG, "debug:onTouchEvent ACTION_DOWN");
-				break;
-			case MotionEvent.ACTION_MOVE: {
-				final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
-						mActivePointerId);
-				if (pointerIndex < 0) {
-					Log.e(LOG_TAG,
-							"Got ACTION_MOVE event but have an invalid active pointer id.");
-					return false;
-				}
-				final float y = MotionEventCompat.getY(ev, pointerIndex);
-				final float overscrollBottom = (mInitialMotionY - y)
-						* DRAG_RATE;
-				if (mIsBeingDragged) {
-					pushDistance = (int) overscrollBottom;
-					updateFooterViewPosition();
-					if (mOnPushLoadMoreListener != null) {
-						mOnPushLoadMoreListener
-								.onPushEnable(pushDistance >= mFooterViewHeight);
-					}
-				}
-				break;
-			}
-			case MotionEventCompat.ACTION_POINTER_DOWN: {
-				final int index = MotionEventCompat.getActionIndex(ev);
-				mActivePointerId = MotionEventCompat.getPointerId(ev, index);
-				break;
-			}
-
-			case MotionEventCompat.ACTION_POINTER_UP:
-				onSecondaryPointerUp(ev);
-				break;
-
-			case MotionEvent.ACTION_UP:
-			case MotionEvent.ACTION_CANCEL: {
-				if (mActivePointerId == INVALID_POINTER) {
-					if (action == MotionEvent.ACTION_UP) {
-						Log.e(LOG_TAG,
-								"Got ACTION_UP event but don't have an active pointer id.");
-					}
-					return false;
-				}
-				final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
-						mActivePointerId);
-				final float y = MotionEventCompat.getY(ev, pointerIndex);
-				final float overscrollBottom = (mInitialMotionY - y)
-						* DRAG_RATE;// 松手是下拉的距离
-				mIsBeingDragged = false;
-				mActivePointerId = INVALID_POINTER;
-				// ////
-				Log.d(LOG_TAG, "debug:onTouchEvent overscrollBottom = "
-						+ overscrollBottom);
-
-				if (overscrollBottom < mFooterViewHeight
-						|| mOnPushLoadMoreListener == null) {// 直接取消
-					pushDistance = 0;
-				} else {// 下拉到mFooterViewHeight
-					pushDistance = mFooterViewHeight;
-				}
-				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB) {
-					updateFooterViewPosition();
-					if (pushDistance == mFooterViewHeight
-							&& mOnPushLoadMoreListener != null) {
-						mOnPushLoadMoreListener.onLoadMore();
-						mLoadMore = true;
-					}
-				} else {
-					animatorFooterToBottom((int) overscrollBottom, pushDistance);
-				}
-				return false;
-			}
-			}
+		if (isChildScrollToBottom()) {// 上拉加载更多
+			return handlerPushTouchEvent(ev, action);
+		} else {// 下拉刷新
+			return handlerPullTouchEvent(ev, action);
 		}
+	}
 
+	private boolean handlerPullTouchEvent(MotionEvent ev, int action) {
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
 			mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
@@ -894,6 +787,87 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		}
 		}
 
+		return true;
+	}
+
+	/**
+	 * 处理上拉加载更多的Touch事件
+	 * 
+	 * @param ev
+	 * @param action
+	 * @return
+	 */
+	private boolean handlerPushTouchEvent(MotionEvent ev, int action) {
+		switch (action) {
+		case MotionEvent.ACTION_DOWN:
+			mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
+			mIsBeingDragged = false;
+			Log.d(LOG_TAG, "debug:onTouchEvent ACTION_DOWN");
+			break;
+		case MotionEvent.ACTION_MOVE: {
+			final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
+					mActivePointerId);
+			if (pointerIndex < 0) {
+				Log.e(LOG_TAG,
+						"Got ACTION_MOVE event but have an invalid active pointer id.");
+				return false;
+			}
+			final float y = MotionEventCompat.getY(ev, pointerIndex);
+			final float overscrollBottom = (mInitialMotionY - y) * DRAG_RATE;
+			if (mIsBeingDragged) {
+				pushDistance = (int) overscrollBottom;
+				updateFooterViewPosition();
+				if (mOnPushLoadMoreListener != null) {
+					mOnPushLoadMoreListener
+							.onPushEnable(pushDistance >= mFooterViewHeight);
+				}
+			}
+			break;
+		}
+		case MotionEventCompat.ACTION_POINTER_DOWN: {
+			final int index = MotionEventCompat.getActionIndex(ev);
+			mActivePointerId = MotionEventCompat.getPointerId(ev, index);
+			break;
+		}
+
+		case MotionEventCompat.ACTION_POINTER_UP:
+			onSecondaryPointerUp(ev);
+			break;
+
+		case MotionEvent.ACTION_UP:
+		case MotionEvent.ACTION_CANCEL: {
+			if (mActivePointerId == INVALID_POINTER) {
+				if (action == MotionEvent.ACTION_UP) {
+					Log.e(LOG_TAG,
+							"Got ACTION_UP event but don't have an active pointer id.");
+				}
+				return false;
+			}
+			final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
+					mActivePointerId);
+			final float y = MotionEventCompat.getY(ev, pointerIndex);
+			final float overscrollBottom = (mInitialMotionY - y) * DRAG_RATE;// 松手是下拉的距离
+			mIsBeingDragged = false;
+			mActivePointerId = INVALID_POINTER;
+			if (overscrollBottom < mFooterViewHeight
+					|| mOnPushLoadMoreListener == null) {// 直接取消
+				pushDistance = 0;
+			} else {// 下拉到mFooterViewHeight
+				pushDistance = mFooterViewHeight;
+			}
+			if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB) {
+				updateFooterViewPosition();
+				if (pushDistance == mFooterViewHeight
+						&& mOnPushLoadMoreListener != null) {
+					mOnPushLoadMoreListener.onLoadMore();
+					mLoadMore = true;
+				}
+			} else {
+				animatorFooterToBottom((int) overscrollBottom, pushDistance);
+			}
+			return false;
+		}
+		}
 		return true;
 	}
 
@@ -1139,6 +1113,10 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		public void onPushEnable(boolean enable);
 	}
 
+	/**
+	 * 
+	 * Adapter
+	 */
 	public class OnPullRefreshListenerAdapter implements OnPullRefreshListener {
 
 		@Override
@@ -1153,6 +1131,29 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
 		@Override
 		public void onPullEnable(boolean enable) {
+
+		}
+
+	}
+
+	public class OnPushLoadMoreListenerAdapter implements
+			OnPushLoadMoreListener {
+
+		@Override
+		public void onLoadMore() {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onPushDistance(int distance) {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public void onPushEnable(boolean enable) {
+			// TODO Auto-generated method stub
 
 		}
 
