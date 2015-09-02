@@ -22,9 +22,9 @@
 				<TextView
 					android:id="@+id/textview"
 					android:layout_width="match_parent"
-					android:layout_height="100dp"
+					android:layout_height="900dp"
 					android:background="#ffceaaaa"
-					android:gravity="bottom|center"
+					android:gravity="center"
 					android:text="I am in ScrollView" />
 			</RelativeLayout>
 		</ScrollView>

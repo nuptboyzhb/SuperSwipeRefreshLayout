@@ -2,11 +2,12 @@ package net.mobctrl.activity;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import net.mobctrl.adapter.RecyclerAdapter;
 import net.mobctrl.treerecyclerview.R;
 import net.mobctrl.views.SuperSwipeRefreshLayout;
 import net.mobctrl.views.SuperSwipeRefreshLayout.OnPullRefreshListener;
+import net.mobctrl.views.SuperSwipeRefreshLayout.OnPushLoadMoreListener;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,6 +24,7 @@ import android.widget.TextView;
  * @PersonalWebsite http://www.mobctrl.net
  * @Description
  */
+@SuppressLint("NewApi")
 public class RecyclerViewActivity extends Activity {
 
 	private RecyclerView recyclerView;
@@ -34,6 +36,11 @@ public class RecyclerViewActivity extends Activity {
 	private ProgressBar progressBar;
 	private TextView textView;
 	private ImageView imageView;
+
+	// Footer View
+	private ProgressBar footerProgressBar;
+	private TextView footerTextView;
+	private ImageView footerImageView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +56,8 @@ public class RecyclerViewActivity extends Activity {
 		// init SuperSwipeRefreshLayout
 		swipeRefreshLayout = (SuperSwipeRefreshLayout) findViewById(R.id.swipe_refresh);
 		swipeRefreshLayout.setHeaderView(createHeaderView());// add headerView
+		swipeRefreshLayout.setFooterView(createFooterView());
+		swipeRefreshLayout.setTargetScrollWithLayout(true);
 		swipeRefreshLayout
 				.setOnPullRefreshListener(new OnPullRefreshListener() {
 
@@ -79,7 +88,57 @@ public class RecyclerViewActivity extends Activity {
 						imageView.setRotation(enable ? 180 : 0);
 					}
 				});
+
+		swipeRefreshLayout
+				.setOnPushLoadMoreListener(new OnPushLoadMoreListener() {
+
+					@Override
+					public void onLoadMore() {
+						footerTextView.setText("正在加载...");
+						footerImageView.setVisibility(View.GONE);
+						footerProgressBar.setVisibility(View.VISIBLE);
+						new Handler().postDelayed(new Runnable() {
+
+							@Override
+							public void run() {
+								footerImageView.setVisibility(View.VISIBLE);
+								footerProgressBar.setVisibility(View.GONE);
+								swipeRefreshLayout.setLoadMore(false);
+							}
+						}, 5000);
+					}
+
+					@Override
+					public void onPushEnable(boolean enable) {
+						footerTextView.setText(enable ? "松开加载" : "上拉加载");
+						footerImageView.setVisibility(View.VISIBLE);
+						footerImageView.setRotation(enable ? 0 : 180);
+					}
+
+					@Override
+					public void onPushDistance(int distance) {
+						// TODO Auto-generated method stub
+
+					}
+
+				});
 		initDatas();
+	}
+
+	private View createFooterView() {
+		View footerView = LayoutInflater.from(swipeRefreshLayout.getContext())
+				.inflate(R.layout.layout_footer, null);
+		footerProgressBar = (ProgressBar) footerView
+				.findViewById(R.id.footer_pb_view);
+		footerImageView = (ImageView) footerView
+				.findViewById(R.id.footer_image_view);
+		footerTextView = (TextView) footerView
+				.findViewById(R.id.footer_text_view);
+		footerProgressBar.setVisibility(View.GONE);
+		footerImageView.setVisibility(View.VISIBLE);
+		footerImageView.setImageResource(R.drawable.down_arrow);
+		footerTextView.setText("上拉加载更多...");
+		return footerView;
 	}
 
 	private View createHeaderView() {
@@ -97,7 +156,7 @@ public class RecyclerViewActivity extends Activity {
 
 	private void initDatas() {
 		List<String> list = new ArrayList<String>();
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 50; i++) {
 			list.add("item " + i);
 		}
 		myAdapter.addAll(list, 0);

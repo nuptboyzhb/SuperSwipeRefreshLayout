@@ -2,10 +2,10 @@ package net.mobctrl.activity;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import net.mobctrl.treerecyclerview.R;
 import net.mobctrl.views.SuperSwipeRefreshLayout;
 import net.mobctrl.views.SuperSwipeRefreshLayout.OnPullRefreshListener;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,6 +23,7 @@ import android.widget.TextView;
  * @PersonalWebsite http://www.mobctrl.net
  * @Description
  */
+@SuppressLint("NewApi")
 public class ListViewActivity extends Activity {
 
 	private SuperSwipeRefreshLayout swipeRefreshLayout;
@@ -99,14 +100,9 @@ public class ListViewActivity extends Activity {
 
 	private List<String> getData() {
 		List<String> data = new ArrayList<String>();
-		data.add("item 1");
-		data.add("item 2");
-		data.add("item 3");
-		data.add("item 4");
-		data.add("item 5");
-		data.add("item 6");
-		data.add("item 7");
-		data.add("item 8");
+		for (int i = 0; i < 20; i++) {
+			data.add("item -- " + i);
+		}
 		return data;
 	}
 

@@ -1,10 +1,20 @@
 package net.mobctrl.views;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.os.Build;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.RecyclerView.LayoutManager;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -20,6 +30,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Transformation;
 import android.widget.AbsListView;
 import android.widget.RelativeLayout;
+import android.widget.ScrollView;
 
 /**
  * @Author Zheng Haibo
@@ -47,9 +58,11 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	// etc.
 	private View mTarget;
 
-	private OnPullRefreshListener mListener;
+	private OnPullRefreshListener mListener;// 下拉刷新listener
+	private OnPushLoadMoreListener mOnPushLoadMoreListener;// 上拉加载更多
 
 	private boolean mRefreshing = false;
+	private boolean mLoadMore = false;
 	private int mTouchSlop;
 	private float mTotalDragDistance = -1;
 	private int mMediumAnimationDuration;
@@ -66,7 +79,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	private static final int[] LAYOUT_ATTRS = new int[] { android.R.attr.enabled };
 
 	private HeadViewContainer mHeadViewContainer;
+	private RelativeLayout mFooterViewContainer;
 	private int mHeaderViewIndex = -1;
+	private int mFooterViewIndex = -1;
 
 	protected int mFrom;
 
@@ -85,13 +100,19 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
 	private boolean mNotify;
 
-	private int mHeaderViewWidth;// headerView的高度
+	private int mHeaderViewWidth;// headerView的宽度
+
+	private int mFooterViewWidth;
 
 	private int mHeaderViewHeight;
+
+	private int mFooterViewHeight;
 
 	private boolean mUsingCustomStart;
 
 	private boolean targetScrollWithLayout = true;
+
+	private int pushDistance = 0;
 
 	private Animation.AnimationListener mRefreshListener = new Animation.AnimationListener() {
 		@Override
@@ -152,6 +173,19 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		mHeadViewContainer.addView(child, layoutParams);
 	}
 
+	public void setFooterView(View child) {
+		if (child == null) {
+			return;
+		}
+		if (mFooterViewContainer == null) {
+			return;
+		}
+		mFooterViewContainer.removeAllViews();
+		RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+				mFooterViewWidth, mFooterViewHeight);
+		mFooterViewContainer.addView(child, layoutParams);
+	}
+
 	public SuperSwipeRefreshLayout(Context context) {
 		this(context, null);
 	}
@@ -182,23 +216,55 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		Display display = wm.getDefaultDisplay();
 		final DisplayMetrics metrics = getResources().getDisplayMetrics();
 		mHeaderViewWidth = (int) display.getWidth();
+		mFooterViewWidth = (int) display.getWidth();
 		mHeaderViewHeight = (int) (HEADER_VIEW_HEIGHT * metrics.density);
+		mFooterViewHeight = (int) (HEADER_VIEW_HEIGHT * metrics.density);
 		createHeaderViewContainer();
+		createFooterViewContainer();
 		ViewCompat.setChildrenDrawingOrderEnabled(this, true);
 		mSpinnerFinalOffset = DEFAULT_CIRCLE_TARGET * metrics.density;
 		mTotalDragDistance = mSpinnerFinalOffset;
 	}
 
+	/**
+	 * 孩子节点绘制的顺序
+	 * 
+	 * @param childCount
+	 * @param i
+	 * @return
+	 */
+	@Override
 	protected int getChildDrawingOrder(int childCount, int i) {
-		if (mHeaderViewIndex < 0) {
-			return i;
-		} else if (i == childCount - 1) {
-			return mHeaderViewIndex;
-		} else if (i >= mHeaderViewIndex) {
-			return i + 1;
-		} else {
+		// 将新添加的View,放到最后绘制
+		// if (mHeaderViewIndex < 0) {
+		// return i;
+		// } else if (i == childCount - 1) {
+		// return mHeaderViewIndex;
+		// } else if (i >= mHeaderViewIndex) {
+		// return i + 1;
+		// } else {
+		// return i;
+		// }
+		if (mHeaderViewIndex < 0 && mFooterViewIndex < 0) {
 			return i;
 		}
+		if (i == childCount - 2) {
+			return mHeaderViewIndex;
+		}
+		if (i == childCount - 1) {
+			return mFooterViewIndex;
+		}
+		int bigIndex = mFooterViewIndex > mHeaderViewIndex ? mFooterViewIndex
+				: mHeaderViewIndex;
+		int smallIndex = mFooterViewIndex < mHeaderViewIndex ? mFooterViewIndex
+				: mHeaderViewIndex;
+		if (i >= smallIndex && i < bigIndex - 1) {
+			return i + 1;
+		}
+		if (i >= bigIndex || (i == bigIndex - 1)) {
+			return i + 2;
+		}
+		return i;
 	}
 
 	/**
@@ -210,8 +276,27 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		addView(mHeadViewContainer);
 	}
 
+	/**
+	 * 添加底部布局
+	 */
+	private void createFooterViewContainer() {
+		mFooterViewContainer = new RelativeLayout(getContext());
+		mFooterViewContainer.setVisibility(View.GONE);
+		addView(mFooterViewContainer);
+	}
+
 	public void setOnPullRefreshListener(OnPullRefreshListener listener) {
 		mListener = listener;
+	}
+
+	/**
+	 * 设置上拉加载更多的接口
+	 * 
+	 * @param onPushLoadMoreListener
+	 */
+	public void setOnPushLoadMoreListener(
+			OnPushLoadMoreListener onPushLoadMoreListener) {
+		this.mOnPushLoadMoreListener = onPushLoadMoreListener;
 	}
 
 	/**
@@ -302,7 +387,8 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		if (mTarget == null) {
 			for (int i = 0; i < getChildCount(); i++) {
 				View child = getChildAt(i);
-				if (!child.equals(mHeadViewContainer)) {
+				if (!child.equals(mHeadViewContainer)
+						&& !child.equals(mFooterViewContainer)) {
 					mTarget = child;
 					break;
 				}
@@ -340,9 +426,10 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		}
 		final View child = mTarget;
 		final int childLeft = getPaddingLeft();
-		final int childTop = getPaddingTop() + distance;// 根据偏移量distance更新
+		final int childTop = getPaddingTop() + distance - pushDistance;// 根据偏移量distance更新
 		final int childWidth = width - getPaddingLeft() - getPaddingRight();
 		final int childHeight = height - getPaddingTop() - getPaddingBottom();
+		Log.d(LOG_TAG, "debug:onLayout childHeight = " + childHeight);
 		child.layout(childLeft, childTop, childLeft + childWidth, childTop
 				+ childHeight);// 更新目标View的位置
 		int headViewWidth = mHeadViewContainer.getMeasuredWidth();
@@ -350,6 +437,11 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		mHeadViewContainer.layout((width / 2 - headViewWidth / 2),
 				mCurrentTargetOffsetTop, (width / 2 + headViewWidth / 2),
 				mCurrentTargetOffsetTop + headViewHeight);// 更新头布局的位置
+		int footViewWidth = mFooterViewContainer.getMeasuredWidth();
+		int footViewHeight = mFooterViewContainer.getMeasuredHeight();
+		mFooterViewContainer.layout((width / 2 - footViewWidth / 2), height
+				- pushDistance, (width / 2 + footViewWidth / 2), height
+				+ footViewHeight - pushDistance);
 	}
 
 	@Override
@@ -369,6 +461,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		mHeadViewContainer.measure(MeasureSpec.makeMeasureSpec(
 				mHeaderViewWidth, MeasureSpec.EXACTLY), MeasureSpec
 				.makeMeasureSpec(mHeaderViewHeight, MeasureSpec.EXACTLY));
+		mFooterViewContainer.measure(MeasureSpec.makeMeasureSpec(
+				mFooterViewWidth, MeasureSpec.EXACTLY), MeasureSpec
+				.makeMeasureSpec(mFooterViewHeight, MeasureSpec.EXACTLY));
 		if (!mUsingCustomStart && !mOriginalOffsetCalculated) {
 			mOriginalOffsetCalculated = true;
 			mCurrentTargetOffsetTop = mOriginalOffsetTop = -mHeadViewContainer
@@ -382,6 +477,13 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 				break;
 			}
 		}
+		mFooterViewIndex = -1;
+		for (int index = 0; index < getChildCount(); index++) {
+			if (getChildAt(index) == mFooterViewContainer) {
+				mFooterViewIndex = index;
+				break;
+			}
+		}
 	}
 
 	/**
@@ -389,20 +491,78 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	 * 
 	 * @return
 	 */
-	public boolean canChildScrollUp() {
+	public boolean isChildScrollToTop() {
 		if (android.os.Build.VERSION.SDK_INT < 14) {
 			if (mTarget instanceof AbsListView) {
 				final AbsListView absListView = (AbsListView) mTarget;
-				return absListView.getChildCount() > 0
-						&& (absListView.getFirstVisiblePosition() > 0 || absListView
-								.getChildAt(0).getTop() < absListView
-								.getPaddingTop());
+				return !(absListView.getChildCount() > 0 && (absListView
+						.getFirstVisiblePosition() > 0 || absListView
+						.getChildAt(0).getTop() < absListView.getPaddingTop()));
 			} else {
-				return mTarget.getScrollY() > 0;
+				return !(mTarget.getScrollY() > 0);
 			}
 		} else {
-			return ViewCompat.canScrollVertically(mTarget, -1);
+			return !ViewCompat.canScrollVertically(mTarget, -1);
 		}
+	}
+
+	/**
+	 * 是否滑动到底部
+	 * 
+	 * @return
+	 */
+	public boolean isChildScrollToBottom() {
+		if (mTarget instanceof RecyclerView) {
+			RecyclerView recyclerView = (RecyclerView) mTarget;
+			LayoutManager layoutManager = recyclerView.getLayoutManager();
+			int count = recyclerView.getAdapter().getItemCount();
+			if (layoutManager instanceof LinearLayoutManager && count > 0) {
+				LinearLayoutManager linearLayoutManager = (LinearLayoutManager) layoutManager;
+				if (linearLayoutManager.findLastCompletelyVisibleItemPosition() == count - 1) {
+					return true;
+				}
+			} else if (layoutManager instanceof StaggeredGridLayoutManager) {
+				StaggeredGridLayoutManager staggeredGridLayoutManager = (StaggeredGridLayoutManager) layoutManager;
+				int[] lastItems = new int[2];
+				staggeredGridLayoutManager
+						.findLastCompletelyVisibleItemPositions(lastItems);
+				int lastItem = Math.max(lastItems[0], lastItems[1]);
+				if (lastItem == count - 1) {
+					return true;
+				}
+			}
+			return false;
+		} else if (mTarget instanceof AbsListView) {
+			final AbsListView absListView = (AbsListView) mTarget;
+			int count = absListView.getAdapter().getCount();
+			int fristPos = absListView.getFirstVisiblePosition();
+			if (fristPos == 0
+					&& absListView.getChildAt(0).getTop() >= absListView
+							.getPaddingTop()) {
+				return false;
+			}
+			int lastPos = absListView.getLastVisiblePosition();
+			if (lastPos > 0 && count > 0 && lastPos == count - 1) {
+				return true;
+			}
+			// if (absListView.getChildAt(count - 1).getBottom() > absListView
+			// .getBottom()) {
+			// return true;
+			// }
+			return false;
+		} else if (mTarget instanceof ScrollView) {
+			ScrollView scrollView = (ScrollView) mTarget;
+			View view = (View) scrollView
+					.getChildAt(scrollView.getChildCount() - 1);
+			if (view != null) {
+				int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
+						.getScrollY()));
+				if (diff == 0) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -420,12 +580,56 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			mReturningToStart = false;
 		}
 
-		if (!isEnabled() || mReturningToStart || canChildScrollUp()
-				|| mRefreshing) {
-			// 如果子View可以滑动，不拦截事件，交给子View处理
+		if (!isEnabled() || mReturningToStart || mRefreshing || mLoadMore
+				|| (!isChildScrollToTop() && !isChildScrollToBottom())) {
+			// 如果子View可以滑动，不拦截事件，交给子View处理-下拉刷新
+			// 或者子View没有滑动到底部不拦截事件-上拉加载更多
 			return false;
 		}
 
+		if (isChildScrollToBottom()) {// 上拉加载更多
+			switch (action) {
+			case MotionEvent.ACTION_DOWN:
+				mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
+				mIsBeingDragged = false;
+				final float initialMotionY = getMotionEventY(ev,
+						mActivePointerId);
+				if (initialMotionY == -1) {
+					return false;
+				}
+				mInitialMotionY = initialMotionY;// 记录按下的位置
+				break;
+			case MotionEvent.ACTION_MOVE:
+				if (mActivePointerId == INVALID_POINTER) {
+					Log.e(LOG_TAG,
+							"Got ACTION_MOVE event but don't have an active pointer id.");
+					return false;
+				}
+
+				final float y = getMotionEventY(ev, mActivePointerId);
+				if (y == -1) {
+					return false;
+				}
+				final float yDiff = mInitialMotionY - y;// 计算上拉距离
+				if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
+					mIsBeingDragged = true;// 正在上拉
+				}
+				break;
+			case MotionEventCompat.ACTION_POINTER_UP:
+				onSecondaryPointerUp(ev);
+				break;
+
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL:
+				mIsBeingDragged = false;
+				mActivePointerId = INVALID_POINTER;
+				break;
+			default:
+				break;
+			}
+			return mIsBeingDragged;
+		}
+		// 下拉刷新判断
 		switch (action) {
 		case MotionEvent.ACTION_DOWN:
 			setTargetOffsetTopAndBottom(
@@ -491,9 +695,89 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			mReturningToStart = false;
 		}
 
-		if (!isEnabled() || mReturningToStart || canChildScrollUp()) {
+		if (!isEnabled() || mReturningToStart
+				|| (!isChildScrollToTop() && !isChildScrollToBottom())) {
 			// 如果子View可以滑动，不拦截事件，交给子View处理
 			return false;
+		}
+
+		if (isChildScrollToBottom()) {
+			switch (action) {
+			case MotionEvent.ACTION_DOWN:
+				mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
+				mIsBeingDragged = false;
+				Log.d(LOG_TAG, "debug:onTouchEvent ACTION_DOWN");
+				break;
+			case MotionEvent.ACTION_MOVE: {
+				final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
+						mActivePointerId);
+				if (pointerIndex < 0) {
+					Log.e(LOG_TAG,
+							"Got ACTION_MOVE event but have an invalid active pointer id.");
+					return false;
+				}
+				final float y = MotionEventCompat.getY(ev, pointerIndex);
+				final float overscrollBottom = (mInitialMotionY - y)
+						* DRAG_RATE;
+				if (mIsBeingDragged) {
+					pushDistance = (int) overscrollBottom;
+					updateFooterViewPosition();
+					if (mOnPushLoadMoreListener != null) {
+						mOnPushLoadMoreListener
+								.onPushEnable(pushDistance >= mFooterViewHeight);
+					}
+				}
+				break;
+			}
+			case MotionEventCompat.ACTION_POINTER_DOWN: {
+				final int index = MotionEventCompat.getActionIndex(ev);
+				mActivePointerId = MotionEventCompat.getPointerId(ev, index);
+				break;
+			}
+
+			case MotionEventCompat.ACTION_POINTER_UP:
+				onSecondaryPointerUp(ev);
+				break;
+
+			case MotionEvent.ACTION_UP:
+			case MotionEvent.ACTION_CANCEL: {
+				if (mActivePointerId == INVALID_POINTER) {
+					if (action == MotionEvent.ACTION_UP) {
+						Log.e(LOG_TAG,
+								"Got ACTION_UP event but don't have an active pointer id.");
+					}
+					return false;
+				}
+				final int pointerIndex = MotionEventCompat.findPointerIndex(ev,
+						mActivePointerId);
+				final float y = MotionEventCompat.getY(ev, pointerIndex);
+				final float overscrollBottom = (mInitialMotionY - y)
+						* DRAG_RATE;// 松手是下拉的距离
+				mIsBeingDragged = false;
+				mActivePointerId = INVALID_POINTER;
+				// ////
+				Log.d(LOG_TAG, "debug:onTouchEvent overscrollBottom = "
+						+ overscrollBottom);
+
+				if (overscrollBottom < mFooterViewHeight
+						|| mOnPushLoadMoreListener == null) {// 直接取消
+					pushDistance = 0;
+				} else {// 下拉到mFooterViewHeight
+					pushDistance = mFooterViewHeight;
+				}
+				if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB) {
+					updateFooterViewPosition();
+					if (pushDistance == mFooterViewHeight
+							&& mOnPushLoadMoreListener != null) {
+						mOnPushLoadMoreListener.onLoadMore();
+						mLoadMore = true;
+					}
+				} else {
+					animatorFooterToBottom((int) overscrollBottom, pushDistance);
+				}
+				return false;
+			}
+			}
 		}
 
 		switch (action) {
@@ -541,9 +825,13 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 					if (mScale) {
 						setAnimationProgress(overscrollTop / mTotalDragDistance);
 					}
-					mListener.onPullEnable(false);
+					if (mListener != null) {
+						mListener.onPullEnable(false);
+					}
 				} else {
-					mListener.onPullEnable(true);
+					if (mListener != null) {
+						mListener.onPullEnable(true);
+					}
 				}
 				setTargetOffsetTopAndBottom(targetY - mCurrentTargetOffsetTop,
 						true);
@@ -607,6 +895,58 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		}
 
 		return true;
+	}
+
+	/**
+	 * 松手之后，使用动画将Footer从距离start变化到end
+	 * 
+	 * @param start
+	 * @param end
+	 */
+	@TargetApi(Build.VERSION_CODES.HONEYCOMB)
+	private void animatorFooterToBottom(int start, final int end) {
+		ValueAnimator valueAnimator = ValueAnimator.ofInt(start, end);
+		valueAnimator.setDuration(150);
+		valueAnimator.addUpdateListener(new AnimatorUpdateListener() {
+
+			@Override
+			public void onAnimationUpdate(ValueAnimator valueAnimator) {
+				// update
+				pushDistance = (Integer) valueAnimator.getAnimatedValue();
+				updateFooterViewPosition();
+			}
+		});
+		valueAnimator.addListener(new AnimatorListenerAdapter() {
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				if (end > 0 && mOnPushLoadMoreListener != null) {
+					// start loading more
+					mOnPushLoadMoreListener.onLoadMore();
+					mLoadMore = true;
+				} else {
+					mLoadMore = false;
+				}
+			}
+		});
+		valueAnimator.setInterpolator(mDecelerateInterpolator);
+		valueAnimator.start();
+	}
+
+	/**
+	 * 设置停止加载
+	 * 
+	 * @param loadMore
+	 */
+	public void setLoadMore(boolean loadMore) {
+		if (!loadMore && mLoadMore) {// 停止加载
+			if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.HONEYCOMB) {
+				mLoadMore = false;
+				pushDistance = 0;
+				updateFooterViewPosition();
+			} else {
+				animatorFooterToBottom(mFooterViewHeight, 0);
+			}
+		}
 	}
 
 	private void animateOffsetToCorrectPosition(int from,
@@ -701,6 +1041,22 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		updateListenerCallBack();
 	}
 
+	/**
+	 * 修改底部布局的位置-敏感pushDistance
+	 */
+	private void updateFooterViewPosition() {
+		mFooterViewContainer.setVisibility(View.VISIBLE);
+		mFooterViewContainer.bringToFront();
+		mFooterViewContainer.offsetTopAndBottom(-pushDistance);
+		updatePushDistanceListener();
+	}
+
+	private void updatePushDistanceListener() {
+		if (mOnPushLoadMoreListener != null) {
+			mOnPushLoadMoreListener.onPushDistance(pushDistance);
+		}
+	}
+
 	private void onSecondaryPointerUp(MotionEvent ev) {
 		final int pointerIndex = MotionEventCompat.getActionIndex(ev);
 		final int pointerId = MotionEventCompat.getPointerId(ev, pointerIndex);
@@ -761,12 +1117,45 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		this.targetScrollWithLayout = targetScrollWithLayout;
 	}
 
+	/**
+	 * 下拉刷新回调
+	 */
 	public interface OnPullRefreshListener {
 		public void onRefresh();
 
 		public void onPullDistance(int distance);
 
 		public void onPullEnable(boolean enable);
+	}
+
+	/**
+	 * 上拉加载更多
+	 */
+	public interface OnPushLoadMoreListener {
+		public void onLoadMore();
+
+		public void onPushDistance(int distance);
+
+		public void onPushEnable(boolean enable);
+	}
+
+	public class OnPullRefreshListenerAdapter implements OnPullRefreshListener {
+
+		@Override
+		public void onRefresh() {
+
+		}
+
+		@Override
+		public void onPullDistance(int distance) {
+
+		}
+
+		@Override
+		public void onPullEnable(boolean enable) {
+
+		}
+
 	}
 
 }
