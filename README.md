@@ -1,13 +1,15 @@
 # SuperSwipeRefreshLayout
 
-A Custom SwipeRefreshLayout.
+A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷新和上拉加载更多
 
 ##Why？
-本来SwipeRefreshLayout已经能够满足大部分的需求了。无奈，产品经理执意要做成下拉过程中，被嵌套的View也要跟随手指的滑动而滑动，并且下拉刷新头可以自定义。
-
+- 1.本来SwipeRefreshLayout已经能够满足大部分的需求了。无奈，产品经理执意要做成下拉过程中，被嵌套的View也要跟随手指的滑动而滑动，并且下拉刷新头可以自定义。<br>
+- 2.应大家要求，添加下拉加载更多
 ##Feature
+- 支持下拉刷新和上拉加载更多
 - 非侵入式，对原来的ListView、RecyclerView没有任何影响,用法和SwipeRefreshLayout类似。
 - 可自定义头部View的样式，调用setHeaderView方法即可
+- 可自定义页尾View的样式，调用setFooterView方法即可
 - 支持RecyclerView，ListView，ScrollView，GridView等等。
 - 被包含的View(RecyclerView,ListView etc.)可跟随手指的滑动而滑动<br>
   默认是跟随手指的滑动而滑动，也可以设置为不跟随：setTargetScrollWithLayout(false)
@@ -16,9 +18,9 @@ A Custom SwipeRefreshLayout.
   开发人员可以根据下拉过程中distance的值做一系列动画。
 <br>
 
-## How to use
+##<1>Pull To Refresh(How to Use)
 
-### step 1
+### Step 1: In XML
 
 ```xml
 <net.mobctrl.views.SuperSwipeRefreshLayout
@@ -32,7 +34,7 @@ A Custom SwipeRefreshLayout.
 			android:layout_height="match_parent" />
 </net.mobctrl.views.SuperSwipeRefreshLayout>
 ```
-### step 2
+### Step 2: Init and setListener
 
 ```java
 
@@ -58,7 +60,7 @@ swipeRefreshLayout = (SuperSwipeRefreshLayout) findViewById(R.id.swipe_refresh);
 				});
 
 ```
-### step 3<br>
+### Step 3: Customized your header view<br>
 - create your header view
 
 ```java
@@ -76,6 +78,52 @@ private View createHeaderView(){
 ```java 
 swipeRefreshLayout.setTargetScrollWithLayout(true);
 ```
+
+##<2> Push to Load More
+当拉倒底部时，上拉加载更多
+
+### setListener
+
+```java
+swipeRefreshLayout
+				.setOnPushLoadMoreListener(new OnPushLoadMoreListener() {
+
+					@Override
+					public void onLoadMore() {
+						...
+						new Handler().postDelayed(new Runnable() {
+
+							@Override
+							public void run() {
+								...
+                                //set false when finished
+								swipeRefreshLayout.setLoadMore(false);
+							}
+						}, 5000);
+					}
+
+					@Override
+					public void onPushEnable(boolean enable) {
+						//TODO 上拉过程中，上拉的距离是否足够出发刷新
+					}
+
+					@Override
+					public void onPushDistance(int distance) {
+						// TODO 上拉距离
+
+					}
+
+				});
+
+```
+### Customized your footer view
+
+```java
+
+swipeRefreshLayout.setFooterView(createFooterView());
+
+```
+
 
 ## Support View
 - RecyclerView.
