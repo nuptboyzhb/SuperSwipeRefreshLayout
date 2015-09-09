@@ -862,8 +862,8 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 				updateFooterViewPosition();
 				if (pushDistance == mFooterViewHeight
 						&& mOnPushLoadMoreListener != null) {
-					mOnPushLoadMoreListener.onLoadMore();
 					mLoadMore = true;
+					mOnPushLoadMoreListener.onLoadMore();
 				}
 			} else {
 				animatorFooterToBottom((int) overscrollBottom, pushDistance);
@@ -898,8 +898,8 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			public void onAnimationEnd(Animator animation) {
 				if (end > 0 && mOnPushLoadMoreListener != null) {
 					// start loading more
-					mOnPushLoadMoreListener.onLoadMore();
 					mLoadMore = true;
+					mOnPushLoadMoreListener.onLoadMore();
 				} else {
 					mLoadMore = false;
 				}
