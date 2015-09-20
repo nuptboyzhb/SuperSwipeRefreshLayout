@@ -9,6 +9,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Build;
+import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -29,6 +30,7 @@ import android.view.animation.Animation.AnimationListener;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Transformation;
 import android.widget.AbsListView;
+import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 
@@ -122,6 +124,8 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
 	private int pushDistance = 0;
 
+	private ProgressBar progressBar = null;
+
 	private Animation.AnimationListener mRefreshListener = new Animation.AnimationListener() {
 		@Override
 		public void onAnimationStart(Animation animation) {
@@ -136,6 +140,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			if (mRefreshing) {
 				if (mNotify) {
 					if (mListener != null) {
+						progressBar.setVisibility(View.VISIBLE);
 						mListener.onRefresh();
 					}
 				}
@@ -227,6 +232,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		mFooterViewWidth = (int) display.getWidth();
 		mHeaderViewHeight = (int) (HEADER_VIEW_HEIGHT * metrics.density);
 		mFooterViewHeight = (int) (HEADER_VIEW_HEIGHT * metrics.density);
+		progressBar = new ProgressBar(getContext());
 		createHeaderViewContainer();
 		createFooterViewContainer();
 		ViewCompat.setChildrenDrawingOrderEnabled(this, true);
@@ -270,8 +276,13 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	 * 创建头布局的容器
 	 */
 	private void createHeaderViewContainer() {
+		RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
+				mHeaderViewHeight / 2, mHeaderViewHeight / 2);
+		layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
 		mHeadViewContainer = new HeadViewContainer(getContext());
 		mHeadViewContainer.setVisibility(View.GONE);
+		progressBar.setVisibility(View.INVISIBLE);
+		mHeadViewContainer.addView(progressBar, layoutParams);
 		addView(mHeadViewContainer);
 	}
 
@@ -326,6 +337,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			startScaleUpAnimation(mRefreshListener);
 		} else {
 			setRefreshing(refreshing, false /* notify */);
+			progressBar.setVisibility(View.INVISIBLE);
 		}
 	}
 
@@ -901,6 +913,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 					mLoadMore = true;
 					mOnPushLoadMoreListener.onLoadMore();
 				} else {
+					resetTargetLayout();
 					mLoadMore = false;
 				}
 			}
@@ -954,6 +967,48 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			mHeadViewContainer.clearAnimation();
 			mHeadViewContainer.startAnimation(mAnimateToStartPosition);
 		}
+		resetTargetLayoutDelay(ANIMATE_TO_START_DURATION);
+	}
+
+	/**
+	 * 重置Target位置
+	 * 
+	 * @param delay
+	 */
+	public void resetTargetLayoutDelay(int delay) {
+		new Handler().postDelayed(new Runnable() {
+
+			@Override
+			public void run() {
+				resetTargetLayout();
+			}
+		}, delay);
+	}
+
+	/**
+	 * 重置Target的位置
+	 */
+	public void resetTargetLayout() {
+		final int width = getMeasuredWidth();
+		final int height = getMeasuredHeight();
+		final View child = mTarget;
+		final int childLeft = getPaddingLeft();
+		final int childTop = getPaddingTop();
+		final int childWidth = child.getWidth() - getPaddingLeft()
+				- getPaddingRight();
+		final int childHeight = child.getHeight() - getPaddingTop()
+				- getPaddingBottom();
+		child.layout(childLeft, childTop, childLeft + childWidth, childTop
+				+ childHeight);
+
+		int headViewWidth = mHeadViewContainer.getMeasuredWidth();
+		int headViewHeight = mHeadViewContainer.getMeasuredHeight();
+		mHeadViewContainer.layout((width / 2 - headViewWidth / 2),
+				-headViewHeight, (width / 2 + headViewWidth / 2), 0);// 更新头布局的位置
+		int footViewWidth = mFooterViewContainer.getMeasuredWidth();
+		int footViewHeight = mFooterViewContainer.getMeasuredHeight();
+		mFooterViewContainer.layout((width / 2 - footViewWidth / 2), height,
+				(width / 2 + footViewWidth / 2), height + footViewHeight);
 	}
 
 	private final Animation mAnimateToCorrectPosition = new Animation() {

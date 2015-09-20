@@ -61,7 +61,7 @@ public class ListViewActivity extends Activity {
 		marginLayoutParams.topMargin = 800;
 		layoutHead.setLayoutParams(marginLayoutParams);
 		progressBar.setVisibility(View.GONE);
-		swipeRefreshLayout.setHeaderView(child);
+		//swipeRefreshLayout.setHeaderView(child);
 		swipeRefreshLayout
 				.setOnPullRefreshListener(new OnPullRefreshListener() {
 
