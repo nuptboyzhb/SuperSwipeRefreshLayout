@@ -8,6 +8,9 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
@@ -30,7 +33,6 @@ import android.view.animation.Animation.AnimationListener;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Transformation;
 import android.widget.AbsListView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 
@@ -124,7 +126,11 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
 	private int pushDistance = 0;
 
-	private ProgressBar progressBar = null;
+	private CircleProgressView defaultProgressView = null;
+
+	private boolean usingDefaultHeader = true;
+
+	private float density = 1.0f;
 
 	private Animation.AnimationListener mRefreshListener = new Animation.AnimationListener() {
 		@Override
@@ -139,8 +145,12 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		public void onAnimationEnd(Animation animation) {
 			if (mRefreshing) {
 				if (mNotify) {
+					if (usingDefaultHeader) {
+						ViewCompat.setAlpha(defaultProgressView, 1.0f);
+						defaultProgressView.setOnDraw(true);
+						new Thread(defaultProgressView).start();
+					}
 					if (mListener != null) {
-						progressBar.setVisibility(View.VISIBLE);
 						mListener.onRefresh();
 					}
 				}
@@ -166,6 +176,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		if (mListener != null) {
 			mListener.onPullDistance(distance);
 		}
+		if (usingDefaultHeader) {
+			defaultProgressView.setPullDistance(distance);
+		}
 	}
 
 	/**
@@ -180,6 +193,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		if (mHeadViewContainer == null) {
 			return;
 		}
+		usingDefaultHeader = false;
 		mHeadViewContainer.removeAllViews();
 		RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
 				mHeaderViewWidth, mHeaderViewHeight);
@@ -232,11 +246,12 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		mFooterViewWidth = (int) display.getWidth();
 		mHeaderViewHeight = (int) (HEADER_VIEW_HEIGHT * metrics.density);
 		mFooterViewHeight = (int) (HEADER_VIEW_HEIGHT * metrics.density);
-		progressBar = new ProgressBar(getContext());
+		defaultProgressView = new CircleProgressView(getContext());
 		createHeaderViewContainer();
 		createFooterViewContainer();
 		ViewCompat.setChildrenDrawingOrderEnabled(this, true);
 		mSpinnerFinalOffset = DEFAULT_CIRCLE_TARGET * metrics.density;
+		density = metrics.density;
 		mTotalDragDistance = mSpinnerFinalOffset;
 	}
 
@@ -277,12 +292,14 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 	 */
 	private void createHeaderViewContainer() {
 		RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
-				mHeaderViewHeight / 2, mHeaderViewHeight / 2);
+				(int) (mHeaderViewHeight * 0.8),
+				(int) (mHeaderViewHeight * 0.8));
 		layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
 		mHeadViewContainer = new HeadViewContainer(getContext());
 		mHeadViewContainer.setVisibility(View.GONE);
-		progressBar.setVisibility(View.INVISIBLE);
-		mHeadViewContainer.addView(progressBar, layoutParams);
+		defaultProgressView.setVisibility(View.VISIBLE);
+		defaultProgressView.setOnDraw(false);
+		mHeadViewContainer.addView(defaultProgressView, layoutParams);
 		addView(mHeadViewContainer);
 	}
 
@@ -337,7 +354,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 			startScaleUpAnimation(mRefreshListener);
 		} else {
 			setRefreshing(refreshing, false /* notify */);
-			progressBar.setVisibility(View.INVISIBLE);
+			if (usingDefaultHeader) {
+				defaultProgressView.setOnDraw(false);
+			}
 		}
 	}
 
@@ -729,6 +748,13 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 					ViewCompat.setScaleX(mHeadViewContainer, 1f);
 					ViewCompat.setScaleY(mHeadViewContainer, 1f);
 				}
+				if (usingDefaultHeader) {
+					float alpha = overscrollTop / mTotalDragDistance * 0.5f;
+					if (alpha >= 1.0f) {
+						alpha = 1.0f;
+					}
+					ViewCompat.setAlpha(defaultProgressView, alpha);
+				}
 				if (overscrollTop < mTotalDragDistance) {
 					if (mScale) {
 						setAnimationProgress(overscrollTop / mTotalDragDistance);
@@ -736,6 +762,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 					if (mListener != null) {
 						mListener.onPullEnable(false);
 					}
+
 				} else {
 					if (mListener != null) {
 						mListener.onPullEnable(true);
@@ -1213,6 +1240,164 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 		public void onPushEnable(boolean enable) {
 			// TODO Auto-generated method stub
 
+		}
+
+	}
+
+	/**
+	 * 设置默认下拉刷新进度条的颜色
+	 * 
+	 * @param color
+	 */
+	public void setDefaultProgressColor(int color) {
+		if (usingDefaultHeader) {
+			defaultProgressView.setProgressColor(color);
+		}
+	}
+
+	/**
+	 * 默认的下拉刷新样式
+	 */
+	public class CircleProgressView extends View implements Runnable {
+
+		private static final int PEROID = 16;// 绘制周期
+		private Paint progressPaint;
+		private Paint bgPaint;
+		private int width;// view的高度
+		private int height;// view的宽度
+
+		private boolean isOnDraw = false;
+		private boolean isRunning = false;
+		private int startAngle = 0;
+		private int speed = 8;
+		private RectF ovalRect = null;
+		private RectF bgRect = null;
+		private int swipeAngle;
+		private int progressColor = 0xffffffff;
+
+		public CircleProgressView(Context context) {
+			super(context);
+		}
+
+		public CircleProgressView(Context context, AttributeSet attrs) {
+			super(context, attrs);
+		}
+
+		public CircleProgressView(Context context, AttributeSet attrs,
+				int defStyleAttr) {
+			super(context, attrs, defStyleAttr);
+		}
+
+		@Override
+		protected void onDraw(Canvas canvas) {
+			super.onDraw(canvas);
+			canvas.drawArc(getBgRect(), 0, 360, false, createBgPaint());
+			int index = startAngle / 360;
+			if (index % 2 == 0) {
+				swipeAngle = (startAngle % 720) / 2;
+			} else {
+				swipeAngle = 360 - (startAngle % 720) / 2;
+			}
+			canvas.drawArc(getOvalRect(), startAngle, swipeAngle, false,
+					createPaint());
+		}
+
+		private RectF getBgRect() {
+			width = getWidth();
+			height = getHeight();
+			if (bgRect == null) {
+				int offset = 0;
+				bgRect = new RectF(offset, offset, width - offset, height
+						- offset);
+			}
+			return bgRect;
+		}
+
+		private RectF getOvalRect() {
+			width = getWidth();
+			height = getHeight();
+			if (ovalRect == null) {
+				int offset = (int) (density * 8);
+				ovalRect = new RectF(offset, offset, width - offset, height
+						- offset);
+			}
+			return ovalRect;
+		}
+
+		public void setProgressColor(int progressColor) {
+			this.progressColor = progressColor;
+		}
+
+		/**
+		 * 根据画笔的颜色，创建画笔
+		 * 
+		 * @return
+		 */
+		private Paint createPaint() {
+			if (this.progressPaint == null) {
+				progressPaint = new Paint();
+				progressPaint.setStrokeWidth((int) (density * 3));
+				progressPaint.setStyle(Paint.Style.STROKE);
+				progressPaint.setAntiAlias(true);
+			}
+			progressPaint.setColor(progressColor);
+			return progressPaint;
+		}
+
+		private Paint createBgPaint() {
+			if (this.bgPaint == null) {
+				bgPaint = new Paint();
+				bgPaint.setColor(0xffa5a5a5);
+				bgPaint.setStyle(Paint.Style.FILL);
+				bgPaint.setAntiAlias(true);
+			}
+			return bgPaint;
+		}
+
+		public void setPullDistance(int distance) {
+			this.startAngle = distance * 2;
+			postInvalidate();
+		}
+
+		@Override
+		public void run() {
+			while (isOnDraw) {
+				isRunning = true;
+				long startTime = System.currentTimeMillis();
+				startAngle += speed;
+				postInvalidate();
+				long time = System.currentTimeMillis() - startTime;
+				if (time < PEROID) {
+					try {
+						Thread.sleep(PEROID - time);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+
+		public void setOnDraw(boolean isOnDraw) {
+			this.isOnDraw = isOnDraw;
+		}
+
+		public void setSpeed(int speed) {
+			this.speed = speed;
+		}
+
+		public boolean isRunning() {
+			return isRunning;
+		}
+
+		@Override
+		public void onWindowFocusChanged(boolean hasWindowFocus) {
+			super.onWindowFocusChanged(hasWindowFocus);
+		}
+
+		@Override
+		protected void onDetachedFromWindow() {
+			isOnDraw = false;
+			super.onDetachedFromWindow();
 		}
 
 	}
