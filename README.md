@@ -7,10 +7,10 @@ A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷�
 - 2.应大家要求，添加下拉加载更多<br>
 
 ##Feature
-- 支持下拉刷新和上拉加载更多
+- 支持下拉刷新和上拉加载更多，使用极其方便。
 - 非侵入式，对原来的ListView、RecyclerView没有任何影响,用法和SwipeRefreshLayout类似。
-- 可自定义头部View的样式，调用setHeaderView方法即可
-- 可自定义页尾View的样式，调用setFooterView方法即可
+- 可自定义头部View的样式，调用setHeaderView方法即可。
+- 可自定义页尾View的样式，调用setFooterView方法即可。
 - 支持RecyclerView，ListView，ScrollView，GridView等等。
 - 被包含的View(RecyclerView,ListView etc.)可跟随手指的滑动而滑动<br>
   默认是跟随手指的滑动而滑动，也可以设置为不跟随：setTargetScrollWithLayout(false)
@@ -61,8 +61,16 @@ swipeRefreshLayout = (SuperSwipeRefreshLayout) findViewById(R.id.swipe_refresh);
 				});
 
 ```
-### Step 3: Customized your header view<br>
-- create your header view
+
+加载完成之后：
+swipeRefreshLayout.setRefresh(false);
+
+### More
+<br>
+以上已经能够满足大部分需求，当然，你也可以这样：
+
+- Customized your header view<br>
+  自定义自己的下拉刷新头部View
 
 ```java
 swipeRefreshLayout.setHeaderView(createHeaderView());// add headerView
@@ -74,11 +82,33 @@ private View createHeaderView(){
    //TODO 创建下拉刷新头部的View样式
 }
 ```
-### More
+
 - setTargetScrollWithLayout(false/true);//default true
+  <br>
+  设置下拉时，被包含的View是否随手指的移动而移动
+
 ```java 
 swipeRefreshLayout.setTargetScrollWithLayout(true);
 ```
+
+- setHeaderViewBackgroundColor
+  <br>
+  设置下拉刷新头部背景色
+
+```java
+swipeRefreshLayout.setHeaderViewBackgroundColor(0xff888888);
+```
+
+- setDefaultCircleProgressColor
+  <br>
+  设置默认圆形进度条颜色
+
+- setDefaultCircleBackgroundColor
+  <br>
+  设置默认圆形背景色
+- setDefaultCircleShadowColor
+  <br>
+  设置默认圆形的阴影颜色
 
 ##Push to Load More
 当拉倒底部时，上拉加载更多

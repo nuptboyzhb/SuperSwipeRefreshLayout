@@ -9,6 +9,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.os.Build;
@@ -203,6 +204,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
         mHeadViewContainer.removeAllViews();
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
                 mHeaderViewWidth, mHeaderViewHeight);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         mHeadViewContainer.addView(child, layoutParams);
     }
 
@@ -300,18 +302,13 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(
                 (int) (mHeaderViewHeight * 0.8),
                 (int) (mHeaderViewHeight * 0.8));
-        layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         mHeadViewContainer = new HeadViewContainer(getContext());
         mHeadViewContainer.setVisibility(View.GONE);
         defaultProgressView.setVisibility(View.VISIBLE);
         defaultProgressView.setOnDraw(false);
         mHeadViewContainer.addView(defaultProgressView, layoutParams);
-        View view = new View(getContext());
-        view.setBackgroundColor(0xcececece);
-        RelativeLayout.LayoutParams viewLayoutParams = new RelativeLayout.LayoutParams(
-                RelativeLayout.LayoutParams.MATCH_PARENT, (int) (1.0f * density));
-        viewLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        mHeadViewContainer.addView(view, viewLayoutParams);
         addView(mHeadViewContainer);
     }
 
@@ -331,6 +328,10 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
      */
     public void setOnPullRefreshListener(OnPullRefreshListener listener) {
         mListener = listener;
+    }
+
+    public void setHeaderViewBackgroundColor(int color){
+        mHeadViewContainer.setBackgroundColor(color);
     }
 
     /**
@@ -506,7 +507,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                         MeasureSpec.EXACTLY));
         mHeadViewContainer.measure(MeasureSpec.makeMeasureSpec(
                 mHeaderViewWidth, MeasureSpec.EXACTLY), MeasureSpec
-                .makeMeasureSpec(mHeaderViewHeight, MeasureSpec.EXACTLY));
+                .makeMeasureSpec(3*mHeaderViewHeight, MeasureSpec.EXACTLY));
         mFooterViewContainer.measure(MeasureSpec.makeMeasureSpec(
                 mFooterViewWidth, MeasureSpec.EXACTLY), MeasureSpec
                 .makeMeasureSpec(mFooterViewHeight, MeasureSpec.EXACTLY));
