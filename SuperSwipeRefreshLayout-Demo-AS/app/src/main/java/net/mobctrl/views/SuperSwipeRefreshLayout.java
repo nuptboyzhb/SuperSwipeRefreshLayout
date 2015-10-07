@@ -330,7 +330,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
         mListener = listener;
     }
 
-    public void setHeaderViewBackgroundColor(int color){
+    public void setHeaderViewBackgroundColor(int color) {
         mHeadViewContainer.setBackgroundColor(color);
     }
 
@@ -390,6 +390,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
     }
 
     private void setAnimationProgress(float progress) {
+        if (!usingDefaultHeader) {
+            progress = 1;
+        }
         ViewCompat.setScaleX(mHeadViewContainer, progress);
         ViewCompat.setScaleY(mHeadViewContainer, progress);
     }
@@ -507,7 +510,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                         MeasureSpec.EXACTLY));
         mHeadViewContainer.measure(MeasureSpec.makeMeasureSpec(
                 mHeaderViewWidth, MeasureSpec.EXACTLY), MeasureSpec
-                .makeMeasureSpec(3*mHeaderViewHeight, MeasureSpec.EXACTLY));
+                .makeMeasureSpec(3 * mHeaderViewHeight, MeasureSpec.EXACTLY));
         mFooterViewContainer.measure(MeasureSpec.makeMeasureSpec(
                 mFooterViewWidth, MeasureSpec.EXACTLY), MeasureSpec
                 .makeMeasureSpec(mFooterViewHeight, MeasureSpec.EXACTLY));
@@ -1271,15 +1274,16 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
     /**
      * 设置圆圈的背景色
+     *
      * @param color
      */
-    public void setDefaultCircleBackgroundColor(int color){
+    public void setDefaultCircleBackgroundColor(int color) {
         if (usingDefaultHeader) {
             defaultProgressView.setCircleBackgroundColor(color);
         }
     }
 
-    public void setDefaultCircleShadowColor(int color){
+    public void setDefaultCircleShadowColor(int color) {
         if (usingDefaultHeader) {
             defaultProgressView.setShadowColor(color);
         }
