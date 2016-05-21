@@ -1127,6 +1127,10 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
     private void updateFooterViewPosition() {
         mFooterViewContainer.setVisibility(View.VISIBLE);
         mFooterViewContainer.bringToFront();
+        //针对4.4及之前版本的兼容
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.KITKAT) {
+            mFooterViewContainer.getParent().requestLayout();
+        }
         mFooterViewContainer.offsetTopAndBottom(-pushDistance);
         updatePushDistanceListener();
     }
