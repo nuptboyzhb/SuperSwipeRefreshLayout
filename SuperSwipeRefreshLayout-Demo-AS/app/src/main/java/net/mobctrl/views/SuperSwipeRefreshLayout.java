@@ -1112,12 +1112,12 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
     }
 
     private void setTargetOffsetTopAndBottom(int offset, boolean requiresUpdate) {
-        mHeadViewContainer.bringToFront();
+        if (requiresUpdate) {
+            viewBringToFront(mHeadViewContainer);
+        }
         mHeadViewContainer.offsetTopAndBottom(offset);
         mCurrentTargetOffsetTop = mHeadViewContainer.getTop();
-        if (requiresUpdate && android.os.Build.VERSION.SDK_INT < 11) {
-            invalidate();
-        }
+
         updateListenerCallBack();
     }
 
@@ -1126,9 +1126,20 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
      */
     private void updateFooterViewPosition() {
         mFooterViewContainer.setVisibility(View.VISIBLE);
-        mFooterViewContainer.bringToFront();
+        viewBringToFront(mFooterViewContainer);
         mFooterViewContainer.offsetTopAndBottom(-pushDistance);
         updatePushDistanceListener();
+    }
+
+    /**
+     * 针对KITKAT之前的兼容
+     */
+
+    private void viewBringToFront(View container) {
+        container.bringToFront();
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.KITKAT) {
+            container.getParent().requestLayout();
+        }
     }
 
     private void updatePushDistanceListener() {
