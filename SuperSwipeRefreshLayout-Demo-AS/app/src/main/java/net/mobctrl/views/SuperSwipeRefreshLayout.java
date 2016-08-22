@@ -469,7 +469,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
         if (mTarget == null) {
             return;
         }
-        int distance = mCurrentTargetOffsetTop + mHeadViewContainer.getHeight();
+        int distance = mCurrentTargetOffsetTop + mHeadViewContainer.getMeasuredHeight();
         if (!targetScrollWithLayout) {
             // 判断标志位，如果目标View不跟随手指的滑动而滑动，将下拉偏移量设置为0
             distance = 0;
