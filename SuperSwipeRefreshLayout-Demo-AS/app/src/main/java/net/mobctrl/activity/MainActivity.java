@@ -48,6 +48,13 @@ public class MainActivity extends Activity {
 						startActivity(intent);
 					}
 				});
+		findViewById(R.id.nested_scrollview_tv).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				Intent intent  = new Intent(MainActivity.this,NestedScrollViewActivity.class);
+				startActivity(intent);
+			}
+		});
 	}
 
 }

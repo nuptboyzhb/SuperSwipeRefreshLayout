@@ -31,6 +31,8 @@
 		</activity>
 		<activity android:name="net.mobctrl.activity.ScrollViewActivity" >
 		</activity>
+		<activity android:name="net.mobctrl.activity.NestedScrollViewActivity" >
+		</activity>
 	</application>
 
 </manifest>

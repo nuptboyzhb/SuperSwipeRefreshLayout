@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.LayoutManager;
@@ -607,6 +608,15 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
             if (view != null) {
                 int diff = (view.getBottom() - (scrollView.getHeight() + scrollView
                         .getScrollY()));
+                if (diff == 0) {
+                    return true;
+                }
+            }
+        } else if (mTarget instanceof NestedScrollView) {
+            NestedScrollView nestedScrollView = (NestedScrollView) mTarget;
+            View view = (View) nestedScrollView.getChildAt(nestedScrollView.getChildCount() - 1);
+            if (view != null) {
+                int diff = (view.getBottom() - (nestedScrollView.getHeight() + nestedScrollView.getScrollY()));
                 if (diff == 0) {
                     return true;
                 }

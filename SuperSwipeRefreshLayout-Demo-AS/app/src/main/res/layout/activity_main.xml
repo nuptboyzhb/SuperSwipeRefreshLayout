@@ -41,4 +41,16 @@
         android:textColor="@android:color/black"
         android:textSize="18sp" />
 
+    <TextView
+        android:id="@+id/nested_scrollview_tv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:background="#ffcecece"
+        android:gravity="center"
+        android:padding="20dp"
+        android:text="NestedScrollView"
+        android:textColor="@android:color/black"
+        android:textSize="18sp" />
+
 </LinearLayout>

@@ -611,6 +611,15 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                     return true;
                 }
             }
+        } else if (mTarget instanceof NestedScrollView) {
+            NestedScrollView nestedScrollView = (NestedScrollView) mTarget;
+            View view = (View) nestedScrollView.getChildAt(nestedScrollView.getChildCount() - 1);
+            if (view != null) {
+                int diff = (view.getBottom() - (nestedScrollView.getHeight() + nestedScrollView.getScrollY()));
+                if (diff == 0) {
+                    return true;
+                }
+            }
         }
         return false;
     }

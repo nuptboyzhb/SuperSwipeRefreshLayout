@@ -11,7 +11,7 @@ A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷�
 - 非侵入式，对原来的ListView、RecyclerView没有任何影响,用法和SwipeRefreshLayout类似。
 - 可自定义头部View的样式，调用setHeaderView方法即可。
 - 可自定义页尾View的样式，调用setFooterView方法即可。
-- 支持RecyclerView，ListView，ScrollView，GridView等等。
+- 支持RecyclerView，ListView，ScrollView，GridView,NestedScrollView等等。
 - 被包含的View(RecyclerView,ListView etc.)可跟随手指的滑动而滑动<br>
   默认是跟随手指的滑动而滑动，也可以设置为不跟随：setTargetScrollWithLayout(false)
 - 回调方法更多<br>
