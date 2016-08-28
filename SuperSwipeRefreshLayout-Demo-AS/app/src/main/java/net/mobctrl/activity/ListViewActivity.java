@@ -45,7 +45,7 @@ public class ListViewActivity extends Activity {
 							public void run() {
 								swipeRefreshLayout.setRefreshing(false);
 							}
-						}, 20000);
+						}, 2000);
 					}
 
 					@Override

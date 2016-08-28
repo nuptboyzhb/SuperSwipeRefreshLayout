@@ -406,7 +406,8 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                 animateOffsetToCorrectPosition(mCurrentTargetOffsetTop,
                         mRefreshListener);
             } else {
-                startScaleDownAnimation(mRefreshListener);
+                //startScaleDownAnimation(mRefreshListener);
+                animateOffsetToStartPosition(mCurrentTargetOffsetTop, mRefreshListener);
             }
         }
     }
