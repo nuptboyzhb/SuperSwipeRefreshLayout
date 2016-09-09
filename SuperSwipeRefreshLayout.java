@@ -510,10 +510,10 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                                 - getPaddingTop() - getPaddingBottom(),
                         MeasureSpec.EXACTLY));
         mHeadViewContainer.measure(MeasureSpec.makeMeasureSpec(
-                mHeaderViewWidth, MeasureSpec.EXACTLY), MeasureSpec
+                MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec
                 .makeMeasureSpec(3 * mHeaderViewHeight, MeasureSpec.EXACTLY));
         mFooterViewContainer.measure(MeasureSpec.makeMeasureSpec(
-                mFooterViewWidth, MeasureSpec.EXACTLY), MeasureSpec
+                MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec
                 .makeMeasureSpec(mFooterViewHeight, MeasureSpec.EXACTLY));
         if (!mUsingCustomStart && !mOriginalOffsetCalculated) {
             mOriginalOffsetCalculated = true;
