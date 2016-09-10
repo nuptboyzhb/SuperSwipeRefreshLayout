@@ -85,6 +85,8 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
     private boolean mIsBeingDragged;
     private int mActivePointerId = INVALID_POINTER;
     private boolean mScale;
+    private boolean mCanLoad = true;
+    private boolean mCanPull = true;
 
     private boolean mReturningToStart;
     private final DecelerateInterpolator mDecelerateInterpolator;
@@ -673,12 +675,16 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                 if (isChildScrollToBottom()) {
                     yDiff = mInitialMotionY - y;// 计算上拉距离
                     if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
-                        mIsBeingDragged = true;// 正在上拉
+                        if (mCanLoad) {//判断是否开启上拉加载
+                            mIsBeingDragged = true;// 正在上拉
+                        }
                     }
                 } else {
                     yDiff = y - mInitialMotionY;// 计算下拉距离
                     if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
-                        mIsBeingDragged = true;// 正在下拉
+                        if (mCanPull) {//判断是否开启下拉刷新
+                            mIsBeingDragged = true;// 正在下拉
+                        }
                     }
                 }
                 break;
@@ -696,6 +702,20 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
 
         return mIsBeingDragged;// 如果正在拖动，则拦截子View的事件
     }
+
+    /**
+     * @param canLoad 是否开启上拉加载,默认开启
+     */
+    public void setCanLoad(boolean canLoad) {
+        mCanLoad = canLoad;
+    }
+    /**
+     * @param canPull是否开启下拉刷新,默认开启
+     */
+    public void setCanPull(boolean canPull) {
+        mCanPull = canPull;
+    }
+
 
     private float getMotionEventY(MotionEvent ev, int activePointerId) {
         final int index = MotionEventCompat.findPointerIndex(ev,
