@@ -4,7 +4,7 @@
 	android:layout_height="match_parent"
 	android:background="#ffcecece" >
 
-	<net.mobctrl.views.SuperSwipeRefreshLayout
+	<com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout
 		android:id="@+id/swipe_refresh"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent" >
@@ -28,6 +28,6 @@
 					android:text="I am in NestedScrollView" />
 			</RelativeLayout>
 		</android.support.v4.widget.NestedScrollView>
-	</net.mobctrl.views.SuperSwipeRefreshLayout>
+	</com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout>
 
 </RelativeLayout>

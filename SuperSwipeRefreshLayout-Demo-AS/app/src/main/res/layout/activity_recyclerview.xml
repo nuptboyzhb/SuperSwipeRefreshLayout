@@ -4,7 +4,7 @@
 	android:layout_height="match_parent"
 	android:background="@android:color/white" >
 
-	<net.mobctrl.views.SuperSwipeRefreshLayout
+	<com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout
 		android:id="@+id/swipe_refresh"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent" >
@@ -13,6 +13,6 @@
 			android:id="@+id/recycler_view"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent" />
-	</net.mobctrl.views.SuperSwipeRefreshLayout>
+	</com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout>
 
 </RelativeLayout>
