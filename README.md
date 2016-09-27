@@ -24,7 +24,7 @@ A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷�
 ### Step 1: In XML
 
 ```xml
-<net.mobctrl.views.SuperSwipeRefreshLayout
+<com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout
 		android:id="@+id/swipe_refresh"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent" >
@@ -33,7 +33,7 @@ A Custom SwipeRefreshLayout.自定义HeaderView和FooterView，支持下拉刷�
 			android:id="@+id/recycler_view"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent" />
-</net.mobctrl.views.SuperSwipeRefreshLayout>
+</com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout>
 ```
 ### Step 2: Init and setListener
 
@@ -109,6 +109,9 @@ swipeRefreshLayout.setHeaderViewBackgroundColor(0xff888888);
 - setDefaultCircleShadowColor
   <br>
   设置默认圆形的阴影颜色
+- setEnable
+  <br>
+  设置是否禁用下拉刷新，默认是使用
 
 ##Push to Load More
 当拉倒底部时，上拉加载更多
@@ -169,11 +172,11 @@ swipeRefreshLayout.setFooterView(createFooterView());
 
 ## About
 @Author: Zheng Haibo 莫川<br>
-@Website: www.mobctrl.net<br>
+@Website: [https://github.com/nuptboyzhb](https://github.com/nuptboyzhb)<br>
 
 # License
 
-Copyright 2015  [Zheng Haibo](https://github.com/nuptboyzhb/)
+Copyright 2015-2016  [Zheng Haibo](https://github.com/nuptboyzhb/)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
