@@ -1,12 +1,5 @@
 package net.mobctrl.activity;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import net.mobctrl.adapter.RecyclerAdapter;
-import net.mobctrl.treerecyclerview.R;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,12 +13,17 @@ import android.widget.TextView;
 
 import com.github.nuptboyzhb.lib.SuperSwipeRefreshLayout;
 
+import net.mobctrl.adapter.RecyclerAdapter;
+import net.mobctrl.treerecyclerview.R;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @Author Zheng Haibo
  * @PersonalWebsite http://www.mobctrl.net
  * @Description
  */
-@SuppressLint("NewApi")
 public class RecyclerViewActivity extends Activity {
 
     private RecyclerView recyclerView;
