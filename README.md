@@ -128,7 +128,7 @@ swipeRefreshLayout.setHeaderViewBackgroundColor(0xff888888);
   <br>
   设置是否禁用下拉刷新，默认是使用
 
-##Push to Load More
+## Push to Load More
 当拉倒底部时，上拉加载更多
 
 ### setListener
