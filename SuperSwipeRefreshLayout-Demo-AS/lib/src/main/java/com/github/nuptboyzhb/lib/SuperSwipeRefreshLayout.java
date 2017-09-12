@@ -82,6 +82,7 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
     private boolean mOriginalOffsetCalculated = false;
 
     private float mInitialMotionY;
+    private float mInitialMotionX;
     private boolean mIsBeingDragged;
     private int mActivePointerId = INVALID_POINTER;
     private boolean mScale;
@@ -653,10 +654,12 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                 mActivePointerId = MotionEventCompat.getPointerId(ev, 0);
                 mIsBeingDragged = false;
                 final float initialMotionY = getMotionEventY(ev, mActivePointerId);
+                final float initialMotionX = getMotionEventX(ev, mActivePointerId);
                 if (initialMotionY == -1) {
                     return false;
                 }
                 mInitialMotionY = initialMotionY;// 记录按下的位置
+                mInitialMotionX = initialMotionX;// 记录按下的位置
 
             case MotionEvent.ACTION_MOVE:
                 if (mActivePointerId == INVALID_POINTER) {
@@ -666,18 +669,20 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
                 }
 
                 final float y = getMotionEventY(ev, mActivePointerId);
+                final float x = getMotionEventX(ev, mActivePointerId);
                 if (y == -1) {
                     return false;
                 }
                 float yDiff = 0;
+                float xDiff = mInitialMotionX - x;
                 if (isChildScrollToBottom()) {
                     yDiff = mInitialMotionY - y;// 计算上拉距离
-                    if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
+                    if (Math.abs(xDiff)< yDiff && yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
                         mIsBeingDragged = true;// 正在上拉
                     }
                 } else {
                     yDiff = y - mInitialMotionY;// 计算下拉距离
-                    if (yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
+                    if (Math.abs(xDiff)< yDiff && yDiff > mTouchSlop && !mIsBeingDragged) {// 判断是否下拉的距离足够
                         mIsBeingDragged = true;// 正在下拉
                     }
                 }
@@ -704,6 +709,15 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
             return -1;
         }
         return MotionEventCompat.getY(ev, index);
+    }
+
+    private float getMotionEventX(MotionEvent ev, int activePointerId) {
+        final int index = MotionEventCompat.findPointerIndex(ev,
+                activePointerId);
+        if (index < 0) {
+            return -1;
+        }
+        return MotionEventCompat.getX(ev, index);
     }
 
     @Override
