@@ -37,6 +37,8 @@ import android.widget.AbsListView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 
+import static android.os.Build.VERSION_CODES.KITKAT;
+
 /**
  * @Author Zheng Haibo
  * @PersonalWebsite http://www.mobctrl.net
@@ -1125,7 +1127,9 @@ public class SuperSwipeRefreshLayout extends ViewGroup {
         mHeadViewContainer.bringToFront();
         mHeadViewContainer.offsetTopAndBottom(offset);
         mCurrentTargetOffsetTop = mHeadViewContainer.getTop();
-        if (requiresUpdate && Build.VERSION.SDK_INT < 11) {
+        //针对4.4及之前版本的兼容
+        if (requiresUpdate && Build.VERSION.SDK_INT < KITKAT) {
+            requestLayout();
             invalidate();
         }
         updateListenerCallBack();
